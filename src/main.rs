@@ -1,37 +1,33 @@
-use std::mem;
+use std::fmt::Debug;
 use std::any::Any;
 
-// This function borrows a slice
-fn analyze_slice(slice: &[i32]) {
-    println!("first element of the slice: {}", slice[0]);
-    println!("the slice has {} elements", slice.len());
+// Logger function for any type that implements Debug.
+fn log<T: Any + Debug>(value: &T) {
+    let value_any = value as &Any;
+
+    // try to convert our value to a String.  If successful, we want to
+    // output the String's length as well as its value.  If not, it's a
+    // different type: just print it out unadorned.
+    match value_any.downcast_ref::<String>() {
+        Some(as_string) => {
+            println!("String ({}): {}", as_string.len(), as_string);
+        }
+        None => {
+            println!("{:?}", value);
+        }
+    }
+}
+
+// This function wants to log its parameter out prior to doing work with it.
+fn do_work<T: Any + Debug>(value: &T) {
+    log(value);
+    // ...do some other work
 }
 
 fn main() {
-    // Fixed-size array (type signature is superfluous)
-    let xs: [i32; 5] = [1, 2, 3, 4, 5];
+    let my_string = "Hello World".to_string();
+    do_work(&my_string);
 
-    // All elements can be initialized to the same value
-    let ys: [i32; 500] = [0; 500];
-
-    // Indexing starts at 0
-    println!("first element of the array: {}", xs[0]);
-    println!("second element of the array: {}", xs[1]);
-
-    // `len` returns the size of the array
-    println!("array size: {}", xs.len());
-
-    // Arrays are stack allocated
-    println!("array occupies {} bytes", mem::size_of_val(&xs));
-
-    // Arrays can be automatically borrowed as slices
-    println!("borrow the whole array as a slice");
-    analyze_slice(&xs);
-
-    // Slices can point to a section of an array
-    println!("borrow a section of the array as a slice");
-    analyze_slice(&ys[1..4]);
-
-    // Out of bound indexing yields a panic
-    println!("{}", xs[5]);
+    let my_i8: i8 = 100;
+    do_work(&my_i8);
 }
