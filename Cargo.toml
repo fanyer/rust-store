@@ -4,3 +4,4 @@ version = "0.1.0"
 authors = ["樊烨尔 <iofanyer@gmail.com>"]
 
 [dependencies]
+accelerate = "0.0.1"
