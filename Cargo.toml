@@ -1,7 +1,12 @@
 [package]
-name = "demo4"
-version = "0.1.0"
-authors = ["樊烨尔 <iofanyer@gmail.com>"]
+
+name = "stunnel"
+version = "0.0.2"
+authors = ["airtrack <airtrack.sk@gmail.com>"]
 
 [dependencies]
-accelerate = "0.0.1"
+
+rust-crypto = "*"
+time = "*"
+rand = "*"
+log = "*"
