@@ -14,6 +14,11 @@ shadowsocks is a fast tunnel proxy that helps you <del>bypass firewalls</del>.
 
 It is **unstable**! If you encounter any problems, please open an issue.
 
+
+##  Warning
+The `coio` package imported need rustup toochain to be nightly version.
+
+
 ## Dependencies
 
 * libcrypto (OpenSSL)
