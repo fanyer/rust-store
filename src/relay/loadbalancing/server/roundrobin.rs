@@ -19,29 +19,36 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#![crate_type = "lib"]
-#![crate_name = "shadowsocks"]
+use relay::loadbalancing::server::LoadBalancer;
+use config::ServerConfig;
 
-#![feature(lookup_host)]
+#[derive(Clone)]
+pub struct RoundRobin {
+    server: Vec<ServerConfig>,
+    index: usize,
+}
 
-extern crate rustc_serialize as serialize;
-#[macro_use]
-extern crate log;
-extern crate lru_cache;
+impl RoundRobin {
+    pub fn new(config: Vec<ServerConfig>) -> RoundRobin {
+        RoundRobin {
+            server: config,
+            index: 0usize,
+        }
+    }
+}
 
-extern crate byteorder;
-extern crate rand;
+impl LoadBalancer for RoundRobin {
+    fn pick_server<'a>(&'a mut self) -> &'a ServerConfig {
+        if self.server.is_empty() {
+            panic!("No server");
+        }
 
-extern crate coio;
+        let ref s = self.server[self.index];
+        self.index = (self.index + 1) % self.server.len();
+        s
+    }
 
-extern crate crypto as rust_crypto;
-extern crate ip;
-extern crate openssl;
-
-extern crate libc;
-
-pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
-
-pub mod config;
-pub mod relay;
-pub mod crypto;
+    fn total(&self) -> usize {
+        self.server.len()
+    }
+}

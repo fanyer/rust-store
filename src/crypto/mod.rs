@@ -19,29 +19,31 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#![crate_type = "lib"]
-#![crate_name = "shadowsocks"]
+//! Crypto methods for shadowsocks
 
-#![feature(lookup_host)]
 
-extern crate rustc_serialize as serialize;
-#[macro_use]
-extern crate log;
-extern crate lru_cache;
+use std::convert::From;
 
-extern crate byteorder;
-extern crate rand;
+use openssl::crypto::symm;
 
-extern crate coio;
-
-extern crate crypto as rust_crypto;
-extern crate ip;
-extern crate openssl;
-
-extern crate libc;
-
-pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
-
-pub mod config;
-pub mod relay;
+pub mod cipher;
+pub mod openssl;
+pub mod digest;
+pub mod table;
+pub mod rc4_md5;
 pub mod crypto;
+
+#[derive(Clone, Copy)]
+pub enum CryptoMode {
+    Encrypt,
+    Decrypt
+}
+
+impl From<CryptoMode> for symm::Mode {
+    fn from(m: CryptoMode) -> symm::Mode {
+        match m {
+            CryptoMode::Encrypt => symm::Mode::Encrypt,
+            CryptoMode::Decrypt => symm::Mode::Decrypt,
+        }
+    }
+}

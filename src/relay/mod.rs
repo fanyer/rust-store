@@ -19,29 +19,41 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#![crate_type = "lib"]
-#![crate_name = "shadowsocks"]
+//! Relay server in local and server side implementations.
 
-#![feature(lookup_host)]
+use std::io::{self, Read, Write};
+use std::net::SocketAddr;
 
-extern crate rustc_serialize as serialize;
-#[macro_use]
-extern crate log;
-extern crate lru_cache;
+pub use self::local::RelayLocal;
+pub use self::server::RelayServer;
 
-extern crate byteorder;
-extern crate rand;
+use ip::IpAddr;
 
-extern crate coio;
+mod tcprelay;
+#[cfg(feature = "enable-udp")]
+mod udprelay;
+pub mod local;
+pub mod server;
+mod loadbalancing;
+pub mod socks5;
 
-extern crate crypto as rust_crypto;
-extern crate ip;
-extern crate openssl;
+pub trait Relay {
+    fn run(&self);
+}
 
-extern crate libc;
+fn copy_once<R: Read, W: Write>(r: &mut R, w: &mut W) -> io::Result<usize> {
+    let mut buf = [0u8; 2048];
+    let len = match r.read(&mut buf) {
+        Ok(0) => return Ok(0),
+        Ok(len) => len,
+        Err(e) => return Err(e),
+    };
+    w.write_all(&buf[..len]).and_then(|_| w.flush()).map(|_| len)
+}
 
-pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
-
-pub mod config;
-pub mod relay;
-pub mod crypto;
+fn take_ip_addr(sockaddr: &SocketAddr) -> IpAddr {
+    match sockaddr {
+        &SocketAddr::V4(ref v4) => IpAddr::V4(*v4.ip()),
+        &SocketAddr::V6(ref v6) => IpAddr::V6(*v6.ip()),
+    }
+}

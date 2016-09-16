@@ -19,29 +19,13 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#![crate_type = "lib"]
-#![crate_name = "shadowsocks"]
+pub use self::roundrobin::RoundRobin;
 
-#![feature(lookup_host)]
+use config::ServerConfig;
 
-extern crate rustc_serialize as serialize;
-#[macro_use]
-extern crate log;
-extern crate lru_cache;
+pub mod roundrobin;
 
-extern crate byteorder;
-extern crate rand;
-
-extern crate coio;
-
-extern crate crypto as rust_crypto;
-extern crate ip;
-extern crate openssl;
-
-extern crate libc;
-
-pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
-
-pub mod config;
-pub mod relay;
-pub mod crypto;
+pub trait LoadBalancer {
+    fn pick_server<'a>(&'a mut self) -> &'a ServerConfig;
+    fn total(&self) -> usize;
+}

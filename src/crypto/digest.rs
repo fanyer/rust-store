@@ -19,29 +19,35 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#![crate_type = "lib"]
-#![crate_name = "shadowsocks"]
+//! Message digest algorithm
 
-#![feature(lookup_host)]
+use crypto::openssl;
 
-extern crate rustc_serialize as serialize;
-#[macro_use]
-extern crate log;
-extern crate lru_cache;
+pub trait Digest: Send {
+    fn update(&mut self, data: &[u8]);
+    fn digest(&mut self) -> Vec<u8>;
+}
 
-extern crate byteorder;
-extern crate rand;
+#[derive(Clone, Copy)]
+pub enum DigestType {
+    Md5,
+    Sha1,
+    Sha,
+}
 
-extern crate coio;
+impl DigestType {
+    pub fn digest_len(&self) -> usize {
+        match *self {
+            DigestType::Md5 => 16,
+            DigestType::Sha1 => 20,
+            DigestType::Sha => 20,
+        }
+    }
+}
 
-extern crate crypto as rust_crypto;
-extern crate ip;
-extern crate openssl;
-
-extern crate libc;
-
-pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
-
-pub mod config;
-pub mod relay;
-pub mod crypto;
+pub fn with_type(t: DigestType) -> Box<Digest + Send> {
+    match t {
+        DigestType::Md5 | DigestType::Sha1 | DigestType::Sha =>
+            Box::new(openssl::OpenSSLDigest::new(t)) as Box<Digest + Send>,
+    }
+}

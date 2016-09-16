@@ -19,14 +19,12 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-//! This is a binary running in the server environment
+//! This is a binary runing in the local environment
 //!
 //! You have to provide all needed configuration attributes via command line parameters,
 //! or you could specify a configuration file. The format of configuration file is defined
 //! in mod `config`.
 //!
-//! *It should be notice that the extented configuration file is not suitable for the server
-//! side.*
 
 extern crate clap;
 extern crate shadowsocks;
@@ -35,21 +33,23 @@ extern crate log;
 extern crate time;
 extern crate coio;
 extern crate env_logger;
-
-use std::env;
-use std::time::Duration;
+extern crate ip;
 
 use clap::{App, Arg};
+
+use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6};
+use std::env;
 
 use coio::Scheduler;
 
 use env_logger::LogBuilder;
 use log::{LogRecord, LogLevelFilter};
-use time::PreciseTime;
+
+use ip::IpAddr;
 
 use shadowsocks::config::{self, Config, ServerConfig};
 use shadowsocks::config::DEFAULT_DNS_CACHE_CAPACITY;
-use shadowsocks::relay::{RelayServer, Relay};
+use shadowsocks::relay::{RelayLocal, Relay};
 
 fn main() {
     let matches = App::new("shadowsocks")
@@ -127,7 +127,7 @@ fn main() {
                         record.location().module_path(),
                         record.args())
             });
-            log_builder.filter(Some("ssserver"), LogLevelFilter::Debug);
+            log_builder.filter(Some("sslocal"), LogLevelFilter::Debug);
         }
         2 => {
             let mut log_builder = log_builder.format(|record: &LogRecord| {
@@ -137,7 +137,7 @@ fn main() {
                         record.location().module_path(),
                         record.args())
             });
-            log_builder.filter(Some("ssserver"), LogLevelFilter::Debug)
+            log_builder.filter(Some("sslocal"), LogLevelFilter::Debug)
                 .filter(Some("shadowsocks"), LogLevelFilter::Debug);
         }
         3 => {
@@ -149,8 +149,7 @@ fn main() {
                         record.args())
             });
             log_builder.filter(Some("sslocal"), LogLevelFilter::Trace)
-                .filter(Some("shadowsocks"), LogLevelFilter::Trace)
-                .filter(Some("coio"), LogLevelFilter::Trace);
+                .filter(Some("shadowsocks"), LogLevelFilter::Trace);
         }
         4 => {
             let mut log_builder = log_builder.format(|record: &LogRecord| {
@@ -183,9 +182,10 @@ fn main() {
     log_builder.init().unwrap();
 
     let mut has_provided_config = false;
+
     let mut config = match matches.value_of("CONFIG") {
         Some(cpath) => {
-            match Config::load_from_file(cpath, config::ConfigType::Server) {
+            match Config::load_from_file(cpath, config::ConfigType::Local) {
                 Ok(cfg) => {
                     has_provided_config = true;
                     cfg
@@ -241,18 +241,35 @@ fn main() {
         panic!("`server-addr`, `server-port`, `method` and `password` should be provided together");
     }
 
-    if !has_provided_config && !has_provided_server_config {
-        println!("You have to specify a configuration file or pass arguments from argument list");
+    let mut has_provided_local_config = false;
+
+    if matches.value_of("LOCAL_ADDR").is_some() && matches.value_of("LOCAL_PORT").is_some() {
+        let (local_addr, local_port) = matches.value_of("LOCAL_ADDR")
+            .and_then(|local_addr| {
+                matches.value_of("LOCAL_PORT")
+                    .map(|p| (local_addr, p))
+            })
+            .unwrap();
+
+        let local_addr: IpAddr = local_addr.parse()
+            .ok()
+            .expect("`local-addr` is not a valid IP address");
+        let local_port: u16 = local_port.parse().ok().expect("`local-port` is not a valid integer");
+
+        config.local = Some(match local_addr {
+            IpAddr::V4(v4) => SocketAddr::V4(SocketAddrV4::new(v4, local_port)),
+            IpAddr::V6(v6) => SocketAddr::V6(SocketAddrV6::new(v6, local_port, 0, 0)),
+        });
+        has_provided_local_config = true;
+    }
+
+    if !has_provided_config && !(has_provided_server_config && has_provided_local_config) {
+        println!("You have to specify a configuration file or pass arguments by argument list");
         println!("{}", matches.usage());
         return;
     }
 
     config.enable_udp = matches.is_present("ENABLE_UDP");
-
-    if !cfg!(feature = "enable-udp") && config.enable_udp {
-        error!("Please compile shadowsocks with --cfg feature=\"enable-udp\"");
-        panic!("UDP relay is disabled");
-    }
 
     info!("ShadowSocks {}", shadowsocks::VERSION);
 
@@ -274,23 +291,11 @@ fn main() {
            stack_size,
            threads);
 
-    let show_run_time = matches.occurrences_of("VERBOSE") >= 2;
     Scheduler::new()
         .with_workers(threads)
         .default_stack_size(stack_size)
         .run(move || {
-            if show_run_time {
-                let start_time = PreciseTime::now();
-                Scheduler::spawn(move || {
-                    loop {
-                        info!("SYSTEM System has already run {}",
-                              start_time.to(PreciseTime::now()));
-                        coio::sleep(Duration::from_secs(5));
-                    }
-                });
-            }
-
-            RelayServer::new(config).run();
+            RelayLocal::new(config).run();
         })
         .unwrap();
 }

@@ -19,29 +19,8 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#![crate_type = "lib"]
-#![crate_name = "shadowsocks"]
+pub mod local;
+pub mod server;
 
-#![feature(lookup_host)]
-
-extern crate rustc_serialize as serialize;
-#[macro_use]
-extern crate log;
-extern crate lru_cache;
-
-extern crate byteorder;
-extern crate rand;
-
-extern crate coio;
-
-extern crate crypto as rust_crypto;
-extern crate ip;
-extern crate openssl;
-
-extern crate libc;
-
-pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
-
-pub mod config;
-pub mod relay;
-pub mod crypto;
+const UDP_RELAY_LOCAL_LRU_CACHE_CAPACITY: usize = 1024;
+const UDP_RELAY_SERVER_LRU_CACHE_CAPACITY: usize = 10240;
