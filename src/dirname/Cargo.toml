@@ -1,0 +1,20 @@
+[package]
+name = "dirname"
+version = "0.0.1"
+authors = []
+
+[lib]
+name = "uu_dirname"
+path = "dirname.rs"
+
+[dependencies]
+libc = "*"
+uucore = { path="../uucore" }
+
+[[bin]]
+name = "dirname"
+path = "main.rs"
+
+[[test]]
+name = "dirname"
+path = "tests/test_dirname.rs"
