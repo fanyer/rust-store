@@ -1,0 +1,26 @@
+[package]
+name = "coreutil"
+version = "0.0.1"
+authors = []
+
+
+[dependencies]
+arch     = { optional=true, path="src/arch" }
+
+
+
+[dev-dependencies]
+time = "*"
+filetime = "*"
+libc = "*"
+regex="*"
+rand="*"
+tempdir="*"
+
+
+
+
+
+[[test]]
+name = "dirname"
+path = "tests/test_dirname.rs"
