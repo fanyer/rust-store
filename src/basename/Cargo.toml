@@ -1,0 +1,16 @@
+[package]
+name = "basename"
+version = "0.0.1"
+authors = []
+
+[lib]
+name = "uu_basename"
+path = "basename.rs"
+
+[dependencies]
+libc = "*"
+uucore = { path="../uucore" }
+
+[[bin]]
+name = "basename"
+path = "main.rs"
