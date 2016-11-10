@@ -1,0 +1,16 @@
+[package]
+name = "cut"
+version = "0.0.1"
+authors = []
+
+[lib]
+name = "uu_cut"
+path = "cut.rs"
+
+[dependencies]
+libc = "*"
+uucore = { path="../uucore" }
+
+[[bin]]
+name = "cut"
+path = "main.rs"
