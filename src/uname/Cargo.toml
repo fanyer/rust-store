@@ -1,0 +1,20 @@
+[package]
+name = "uname"
+version = "0.0.1"
+authors = []
+
+[lib]
+name = "uu_uname"
+path = "uname.rs"
+
+[dependencies]
+getopts = "*"
+
+[dependencies.uucore]
+path = "../uucore"
+default-features = false
+features = ["utsname"]
+
+[[bin]]
+name = "uname"
+path = "main.rs"
