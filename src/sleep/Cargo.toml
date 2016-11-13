@@ -1,0 +1,17 @@
+[package]
+name = "sleep"
+version = "0.0.1"
+authors = []
+
+[lib]
+name = "uu_sleep"
+path = "sleep.rs"
+
+[dependencies]
+getopts = "*"
+libc = "*"
+uucore = { path="../uucore" }
+
+[[bin]]
+name = "sleep"
+path = "main.rs"
