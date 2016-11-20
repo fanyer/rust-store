@@ -1,0 +1,17 @@
+[package]
+name = "cp"
+version = "0.0.1"
+authors = []
+
+[lib]
+name = "uu_cp"
+path = "cp.rs"
+
+[dependencies]
+getopts = "*"
+libc = "*"
+uucore = { path="../uucore" }
+
+[[bin]]
+name = "cp"
+path = "main.rs"
